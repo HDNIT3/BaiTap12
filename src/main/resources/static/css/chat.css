@@ -1,0 +1,120 @@
+/* Custom CSS for Chat Application */
+
+/* Global Styles */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Room Selection Styles */
+.room-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.room-card:hover {
+    border-left-color: #007bff;
+    background-color: #f8f9ff;
+}
+
+/* Chat Message Animations */
+.message {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.message-received {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Typing indicator animation */
+.typing-indicator {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Online status blink */
+.online-status {
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .message {
+        max-width: 85%;
+    }
+    
+    .chat-header h5 {
+        font-size: 1rem;
+    }
+    
+    .user-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+}
+
+/* Message input enhancements */
+#messageInput {
+    max-height: 120px;
+    transition: height 0.2s ease;
+}
+
+/* Button hover effects */
+.btn {
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

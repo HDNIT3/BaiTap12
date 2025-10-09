@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn phòng chat - Chat App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .room-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .room-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #007bff, #28a745);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .new-chat-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .online-status {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            background-color: #28a745;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">💬 Chat App</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    Xin chào, <strong th:text="${currentUser.name}"></strong>!
+                </span>
+                <a class="btn btn-outline-light btn-sm" th:href="@{/logout}">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Alert messages -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row">
+            <!-- Existing Chat Rooms -->
+            <div class="col-lg-8">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3><i class="fas fa-comments"></i> Phòng chat của bạn</h3>
+                    <span class="badge bg-primary" th:text="${#lists.size(roomInfos)} + ' phòng'"></span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(roomInfos)}" class="text-center py-5">
+                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Chưa có phòng chat nào</h5>
+                    <p class="text-muted">Hãy chọn một người bạn để bắt đầu cuộc trò chuyện!</p>
+                </div>
+
+                <div class="row" th:if="${not #lists.isEmpty(roomInfos)}">
+                    <div class="col-md-6 mb-3" th:each="roomInfo : ${roomInfos}">
+                        <div class="card room-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="position-relative">
+                                        <div class="user-avatar" th:text="${#strings.substring(roomInfo.otherUser.name, 0, 1).toUpperCase()}"></div>
+                                        <div class="online-status"></div>
+                                    </div>
+                                    <div class="ms-3 flex-grow-1">
+                                        <h6 class="mb-1" th:text="${roomInfo.otherUser.name}"></h6>
+                                        <small class="text-muted">
+                                            <span th:text="${roomInfo.messageCount}"></span> tin nhắn
+                                        </small>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <form th:action="@{/rooms/{roomId}/delete(roomId=${roomInfo.room.idroom})}" method="post" style="display:inline;">
+                                                    <button type="submit" class="dropdown-item text-danger" 
+                                                            onclick="return confirm('Bạn có chắc muốn xóa phòng chat này?')">
+                                                        <i class="fas fa-trash"></i> Xóa phòng
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div th:if="${roomInfo.lastMessage != null}" class="mb-3">
+                                    <small class="text-muted">Tin nhắn cuối:</small>
+                                    <p class="mb-1 text-truncate" th:text="${roomInfo.lastMessage.text}"></p>
+                                    <small class="text-muted" th:text="${#temporals.format(roomInfo.lastMessage.createdAt, 'dd/MM/yyyy HH:mm')}"></small>
+                                </div>
+                                
+                                <div th:if="${roomInfo.lastMessage == null}">
+                                    <p class="text-muted mb-3">Chưa có tin nhắn nào</p>
+                                </div>
+                                
+                                <a th:href="@{/rooms/{roomId}/chat(roomId=${roomInfo.room.idroom})}" 
+                                   class="btn btn-primary w-100">
+                                    <i class="fas fa-comment"></i> Vào phòng chat
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create New Chat -->
+            <div class="col-lg-4">
+                <div class="new-chat-section">
+                    <h5 class="mb-4"><i class="fas fa-plus-circle"></i> Tạo phòng chat mới</h5>
+                    
+                    <div th:if="${#lists.isEmpty(availableUsers)}" class="text-center py-3">
+                        <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Không có người dùng nào khác</p>
+                    </div>
+
+                    <div th:if="${not #lists.isEmpty(availableUsers)}">
+                        <p class="text-muted small mb-3">Chọn người bạn muốn chat (mỗi phòng chỉ có 2 người):</p>
+                        
+                        <div class="list-group">
+                            <div th:each="user : ${availableUsers}" 
+                                 class="list-group-item list-group-item-action d-flex align-items-center p-3">
+                                <div class="user-avatar me-3" th:text="${#strings.substring(user.name, 0, 1).toUpperCase()}"></div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1" th:text="${user.name}"></h6>
+                                    <small class="text-muted">Nhấn để tạo phòng chat</small>
+                                </div>
+                                <form th:action="@{/rooms/create}" method="post" style="display:inline;">
+                                    <input type="hidden" name="targetUserId" th:value="${user.id}">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="mt-4 p-3 bg-white rounded shadow-sm">
+                    <h6><i class="fas fa-chart-simple"></i> Thống kê</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="fs-4 text-primary" th:text="${#lists.size(roomInfos)}"></div>
+                            <small class="text-muted">Phòng chat</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="fs-4 text-success" th:text="${#lists.size(availableUsers)}"></div>
+                            <small class="text-muted">Người có thể chat</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
