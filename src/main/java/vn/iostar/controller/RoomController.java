@@ -1,6 +1,7 @@
 package vn.iostar.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,9 @@ public class RoomController {
     
     @Autowired
     private TextService textService;
+    
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
     
     /**
      * Trang chọn phòng chat - hiển thị danh sách phòng và danh sách user để tạo phòng mới
@@ -76,6 +80,19 @@ public class RoomController {
         
         try {
             Room room = roomService.createOrFindRoom(currentUser.getId(), targetUserId);
+            User targetUser = userService.getUserById(targetUserId);
+            
+            // Broadcast room creation to all users
+            ChatWebSocketController.RoomUpdateMessage updateMessage = new ChatWebSocketController.RoomUpdateMessage();
+            updateMessage.setType("CREATE");
+            updateMessage.setRoomId(room.getIdroom());
+            updateMessage.setUserId1(currentUser.getId());
+            updateMessage.setUserId2(targetUserId);
+            updateMessage.setUserName1(currentUser.getName());
+            updateMessage.setUserName2(targetUser.getName());
+            
+            messagingTemplate.convertAndSend("/topic/rooms/update", updateMessage);
+            
             return "redirect:/rooms/" + room.getIdroom() + "/chat";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -136,6 +153,14 @@ public class RoomController {
         }
         
         if (roomService.deleteRoom(roomId, currentUser.getId())) {
+            // Broadcast room deletion to all users
+            ChatWebSocketController.RoomUpdateMessage updateMessage = new ChatWebSocketController.RoomUpdateMessage();
+            updateMessage.setType("DELETE");
+            updateMessage.setRoomId(roomId);
+            updateMessage.setUserId1(currentUser.getId());
+            
+            messagingTemplate.convertAndSend("/topic/rooms/update", updateMessage);
+            
             redirectAttributes.addFlashAttribute("success", "Đã xóa phòng chat!");
         } else {
             redirectAttributes.addFlashAttribute("error", "Không thể xóa phòng chat!");

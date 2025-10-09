@@ -1,6 +1,7 @@
 package vn.iostar.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,9 @@ public class AuthController {
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
     
     @GetMapping("/")
     public String home() {
@@ -34,6 +38,12 @@ public class AuthController {
         try {
             User user = userService.loginUser(name, password);
             session.setAttribute("currentUser", user);
+            
+            // Broadcast user online status
+            ChatWebSocketController.UserStatusMessage statusMessage = 
+                new ChatWebSocketController.UserStatusMessage(user.getId(), user.getName(), "ONLINE");
+            messagingTemplate.convertAndSend("/topic/user/status", statusMessage);
+            
             return "redirect:/rooms";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -67,6 +77,14 @@ public class AuthController {
     
     @GetMapping("/logout")
     public String logout(HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            // Broadcast user offline status
+            ChatWebSocketController.UserStatusMessage statusMessage = 
+                new ChatWebSocketController.UserStatusMessage(currentUser.getId(), currentUser.getName(), "OFFLINE");
+            messagingTemplate.convertAndSend("/topic/user/status", statusMessage);
+        }
+        
         session.invalidate();
         return "redirect:/login";
     }

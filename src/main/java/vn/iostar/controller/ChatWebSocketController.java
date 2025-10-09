@@ -62,6 +62,18 @@ public class ChatWebSocketController {
         messagingTemplate.convertAndSend("/topic/room/" + chatMessage.getRoomId(), chatMessage);
     }
     
+    @MessageMapping("/rooms.update")
+    public void updateRooms(@Payload RoomUpdateMessage message) {
+        // Broadcast room list update to all users
+        messagingTemplate.convertAndSend("/topic/rooms/update", message);
+    }
+    
+    @MessageMapping("/user.online")
+    public void userOnline(@Payload UserStatusMessage message) {
+        // Broadcast user online status
+        messagingTemplate.convertAndSend("/topic/user/status", message);
+    }
+
     // DTO classes
     public static class ChatMessage {
         private Long roomId;
@@ -115,5 +127,62 @@ public class ChatWebSocketController {
         
         public java.time.LocalDateTime getTimestamp() { return timestamp; }
         public void setTimestamp(java.time.LocalDateTime timestamp) { this.timestamp = timestamp; }
+    }
+    
+    // New DTO classes
+    public static class RoomUpdateMessage {
+        private String type; // CREATE, DELETE
+        private Long roomId;
+        private Long userId1;
+        private Long userId2;
+        private String userName1;
+        private String userName2;
+        
+        // Constructors
+        public RoomUpdateMessage() {}
+        
+        // Getters and Setters
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        
+        public Long getRoomId() { return roomId; }
+        public void setRoomId(Long roomId) { this.roomId = roomId; }
+        
+        public Long getUserId1() { return userId1; }
+        public void setUserId1(Long userId1) { this.userId1 = userId1; }
+        
+        public Long getUserId2() { return userId2; }
+        public void setUserId2(Long userId2) { this.userId2 = userId2; }
+        
+        public String getUserName1() { return userName1; }
+        public void setUserName1(String userName1) { this.userName1 = userName1; }
+        
+        public String getUserName2() { return userName2; }
+        public void setUserName2(String userName2) { this.userName2 = userName2; }
+    }
+    
+    public static class UserStatusMessage {
+        private Long userId;
+        private String userName;
+        private String status; // ONLINE, OFFLINE
+        
+        // Constructors
+        public UserStatusMessage() {}
+        
+        public UserStatusMessage(Long userId, String userName, String status) {
+            this.userId = userId;
+            this.userName = userName;
+            this.status = status;
+        }
+        
+        // Getters and Setters
+        public Long getUserId() { return userId; }
+        public void setUserId(Long userId) { this.userId = userId; }
+        
+        public String getUserName() { return userName; }
+        public void setUserName(String userName) { this.userName = userName; }
+        
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
     }
 }
